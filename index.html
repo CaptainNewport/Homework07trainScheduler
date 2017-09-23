@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html lang="en-us">
+
+<head>
+
+  <meta charset="UTF-8">
+  <title>Super Advanced Train Scheduling Tool </title>
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <!--You poor TA's know better than I do how much I hate to add CSS or even make decent CSS, but here's CSS for a very necessary component of my code-->
+  <link rel="stylesheet" href="superStylesheet.css">
+
+  <!-- LINK TO FIREBASE GOES HERE -->
+<script src="https://www.gstatic.com/firebasejs/4.3.1/firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
+
+
+</head>
+
+<body>
+
+  <div class="container">
+
+    <br>
+
+    <!-- Jumbotron -->
+    <div class="jumbotron">
+      <h1 class="text-center">Choo Choo Motherconductor!</h1>
+      <p class="text-center">Enter a train, it's departure location, and the frequency of its arrival.</p>
+    </div>
+
+    <div class="row">
+
+      <!-- Sign-Up Panel-->
+      <div class="col-lg-6">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Enter Train Info</h3>
+          </div>
+          <div class="panel-body">
+      <div class="panel-body">
+              <table class="table table-hover" id='train-table'>
+                <thead>
+                  <tr>
+                    <th>Train Name</th>
+                    <th>Destination</th>
+                    <th>Frequency</th>
+                    <th>First Arrival Time</th>
+                    <th>Next Expected Arrival Time</th>
+                      </tr>
+                </thead>
+                <tbody>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Sign-up Form (note the various input "types")-->
+
+            <form role="form">
+              <div class="form-group">
+                <label for="name-input">Train Name:</label>
+                <input class="form-control" id="name-input" type="text">
+              </div>
+              <div class="form-group">
+                <label for="destination-input">Destination:</label>
+                <input class="form-control" id="destination-input" type="text">
+              </div>
+              <div class="form-group">
+                <label for="first-time-input">First Arrival Time:</label>
+                <input class="form-control" id="first-time-input" type="time">
+              </div>
+              <div class="form-group">
+                <label for="frequency-input">Enter the frequency of the train</label>
+                <textarea class="form-control" id="frequency-input"></textarea>
+              </div>
+              <button class="btn btn-default" id="add-user" type="submit">Submit</button>
+            </form>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+    </div>
+
+  </div>
+  
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery.js"></script>
+
+  <!-- Script -->
+  <script>
+    // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyBpIkrFV-ahJ-0VMipgi71z4nOVqwJWHjM",
+    authDomain: "train-scheduler-2a17c.firebaseapp.com",
+    databaseURL: "https://train-scheduler-2a17c.firebaseio.com",
+    projectId: "train-scheduler-2a17c",
+    storageBucket: "train-scheduler-2a17c.appspot.com",
+    messagingSenderId: "858311599926"
+  };
+  firebase.initializeApp(config);
+
+    // Create a variable to reference the database.
+    var database = firebase.database();
+    // Initializes Values
+    var trainName = "";
+    var destination = ""; 
+    var firstArrivalTime = 0;
+    var trainFrequency = "";
+    // button that enters inputs and pushes info to Firebase
+    $("#add-user").on("click", function(event) {
+      event.preventDefault();
+      
+      // makes values from the inputs and sets them in these crafty names
+      trainName = $("#name-input").val().trim();
+      destination = $("#destination-input").val().trim();
+      firstArrivalTime = $("#first-time-input").val().trim();
+      frequency = $("#frequency-input").val().trim();
+
+      //breaks inputs into an object with keys, stole this from the timesheet which you may recognize with a bunch of other stuff I stole from it
+      var newTrain = 
+      {
+      trainName: trainName,
+      destination: destination,
+      firstArrivalTime: firstArrivalTime,
+      frequency: frequency
+      };
+
+      // pushes what object that was made up into the Cloud
+      database.ref().push(newTrain);
+
+      //resets the inputs, or should at least
+      $("#name-input").val("");
+      $("#destination-input").val("");
+      $("#first-time-input").val("");
+      $("#frequency-input").val("");
+    });
+
+    //section for listening to firebase changes
+    database.ref().on("child_added", function(childSnapshot, prevChildKey) {
+
+
+        console.log(childSnapshot.val().trainName);
+        //takes childSnapshots of the keys of the objects pushed into Firebase
+        var firebaseTrainName = childSnapshot.val().trainName;
+        var firebaseDestination = childSnapshot.val().destination;
+        var firebaseTime = childSnapshot.val().firstArrivalTime;
+        var firebaseFrequency = childSnapshot.val().frequency;
+      //just made this an even more separated variable because that's what I was doing at the time and guess what- I just kept it becuase it worked
+       var addedMinutes=firebaseFrequency;
+       console.log(addedMinutes);
+
+      //code I scavenged online after finally realizing the impotance put on military timing in the instructions, this converts it to military which makes everything else add properly.
+        var nextArrivalTime = moment(firebaseTime, "hh:mm")
+        .add(addedMinutes, 'minutes')
+        .format('LTS');
+       console.log(nextArrivalTime);
+
+        //code to append to table using childSnapshot wizardry I don't righly understand
+        $("#train-table > tbody").append("<tr><td>" + firebaseTrainName + "</td><td>" + firebaseDestination + "</td><td>" +
+        firebaseFrequency + "</td><td>" + firebaseTime + "</td><td>" + nextArrivalTime + "</td></tr>");
+    });
+
+  </script>
+
+</body>
+
+<div>
+<img id="juicy" src="biggieSmallsTheTankEngine.jpg">
+</div>
+
+</div>
+
+
+</html>
